@@ -18,6 +18,9 @@ alive by short vertical sizzle reels and a creator competition.
 | 4 | [`04-sizzle-reels.md`](04-sizzle-reels.md) | 5 reel scripts and storyboards (15–60s) with platform and hook | The tangible |
 | 5 | [`05-audience-cta-distribution-metrics.md`](05-audience-cta-distribution-metrics.md) | New audience, CTA, rollout plan, success metrics | Deck slides 6–8 |
 | 6 | [`06-mock-social-assets.md`](06-mock-social-assets.md) | Post copy, thumbnails, carousel, creator brief for the Zenith Open | The tangible |
+| 🎞️ | [`slides/`](slides/) | **The 10-slide deck** (link + slide list), exportable to .pptx/PDF | The final presentation |
+| ▶️ | [`sizzle-reel/`](sizzle-reel/) | **15s motion sizzle reel** "The Flicker" (MP4 with sound), with editable source | Cold open / the tangible |
+| 📦 | [`ASSETS-WISHLIST.md`](ASSETS-WISHLIST.md) | What would make this stronger if you have it | Next steps |
 
 ## Where you still need to add your own material
 - **Slide 9: "What changed our thinking."** Placeholders in `01-pitch-deck-outline.md` are marked `✏️ FILL IN`.

@@ -1,0 +1,19 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Build scratch
+node_modules/
+__pycache__/
+*.pyc
+frames/
+*.wav
+
+# Big raw media: keep in Google Drive, link from a README
+*.mov
+*.prproj
+*.aep
+*.psd
