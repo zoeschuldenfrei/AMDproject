@@ -140,6 +140,17 @@
   .kv b { font-size: 24px; letter-spacing: 5px; text-transform: uppercase; color: var(--cyan); font-weight: 800; }
   .kv span { font-size: 28px; color: var(--ink); }
 
+  /* what's next: roadmap */
+  .road { display: grid; grid-template-columns: 1fr 64px 1fr 64px 1fr; align-items: stretch; margin-top: 56px; }
+  .phase { border: 1px solid rgba(46,230,255,.32); border-radius: 2px; padding: 36px 38px; background: rgba(2,8,8,.9); display: flex; flex-direction: column; gap: 14px; }
+  .phase.now { border-color: rgba(57,255,136,.6); }
+  .phase .k { font-size: 21px; letter-spacing: 4px; white-space: nowrap; font-weight: 800; color: var(--cyan); }
+  .phase.now .k { color: var(--green); }
+  .phase h3 { font-size: 40px; color: var(--ink); }
+  .phase p { font-size: 26px; }
+  .phase ul { margin-top: 6px; padding-left: 26px; }
+  .phase li { font-size: 25px; line-height: 1.4; }
+  .road .arrow { align-self: center; text-align: center; }
   /* lessons */
   .lessons { margin-top: 50px; display: grid; gap: 22px; max-width: 1500px; }
   .lesson { border: 1px solid rgba(46,230,255,.32); border-left: 3px solid var(--green); border-radius: 2px; padding: 30px 38px; display: flex; gap: 30px; align-items: baseline; background: rgba(2,8,8,.9); }
@@ -288,7 +299,40 @@
     </div>
   </section>
 
-  <!-- 9 PROGRAM LESSONS -->
+  <!-- 9 WHAT'S NEXT -->
+  <section class="slide">
+    <div class="eyebrow">What’s Next</div>
+    <h2>The reels are the base. <span class="c glow-c">Creators build the city.</span></h2>
+    <div class="road">
+      <div class="phase now">
+        <div class="k">NOW · THE BASE</div>
+        <h3>Sizzle reels</h3>
+        <p>Build the world and the hook. Every reel ends on the same reveal: the city is the chip, and the chip is AMD.</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="phase">
+        <div class="k">NEXT · CREATORS ENTER</div>
+        <h3>The streamer competition</h3>
+        <ul>
+          <li>Streamers compete inside SUBSTRATE: race the rooftops, hunt the hidden chips</li>
+          <li>Their runs become a short-form vertical series</li>
+          <li>“Find the city” easter eggs pull fans in with them</li>
+        </ul>
+      </div>
+      <div class="arrow">→</div>
+      <div class="phase">
+        <div class="k">FUTURE · CREATORS IN CANON</div>
+        <h3>Ambassadors in the city</h3>
+        <ul>
+          <li>Famous streamers who already play on AMD, animated as characters in the series</li>
+          <li>Their audiences discover the city through someone they trust</li>
+          <li>The audience stops watching the city and starts living in it</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 PROGRAM LESSONS -->
   <section class="slide">
     <div class="eyebrow g">What Changed Our Thinking</div>
     <h2>Program Lessons</h2>
@@ -299,7 +343,7 @@
     </div>
   </section>
 
-  <!-- 10 CLOSE -->
+  <!-- 11 CLOSE -->
   <section class="slide close">
     <div class="keyart" style="background-image:url('KEYART_SRC')"></div>
     <img src="LOGO_SRC" alt="AMD" style="width:230px;height:auto;margin-bottom:46px">
