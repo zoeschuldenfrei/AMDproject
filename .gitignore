@@ -17,3 +17,5 @@ frames/
 *.prproj
 *.aep
 *.psd
+zoe/deck/pptx/qa/
+zoe/deck/pptx/_unpacked/
