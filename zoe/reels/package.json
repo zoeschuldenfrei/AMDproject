@@ -1,0 +1,20 @@
+{
+  "name": "substrate-reels",
+  "private": true,
+  "description": "SUBSTRATE sizzle reels, built with Remotion",
+  "scripts": {
+    "preview": "remotion studio",
+    "render:reel1": "remotion render Reel1-EveryCity ../out/substrate-reel1-every-city.mp4 --concurrency=2 --timeout=240000",
+    "audio": "python3 audio/make_reel1_audio.py public/reel1.wav && ffmpeg -y -loglevel error -i public/reel1.wav -b:a 192k public/reel1.mp3 && rm public/reel1.wav"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.535",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.535"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "typescript": "^5.6.3"
+  }
+}

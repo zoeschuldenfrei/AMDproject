@@ -9,7 +9,7 @@ const fs = require('fs');
   fs.mkdirSync(outDir, { recursive: true });
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
-  await page.goto('file://' + path.resolve(htmlPath) + '?render');
+  await page.goto('file://' + path.resolve(htmlPath) + '?render', { timeout: 300000 });
   await page.evaluate(() => document.fonts.ready);
   const n = Math.round(Number(fps) * Number(seconds));
   for (let i = 0; i < n; i++) {
