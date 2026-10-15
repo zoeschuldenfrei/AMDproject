@@ -19,6 +19,7 @@ def data_uri(path, mime):
 
 keyart = data_uri(os.path.join(here, 'keyart.jpg'), 'image/jpeg')
 src = src.replace('KEYART_SRC', keyart)
+src = src.replace('SUBSTER_SRC', data_uri(os.path.join(here, 'subster.jpg'), 'image/jpeg'))
 src = src.replace('LOGO_SRC', data_uri(os.path.join(here, '..', 'assets', 'amd-logo-white.png'), 'image/png'))
 
 reel = os.path.join(here, '..', 'out', 'substrate-reel-15s.mp4')

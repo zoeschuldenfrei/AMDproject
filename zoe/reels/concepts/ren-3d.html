@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ren 3D Turnaround</title>
+<style>
+  :root { --bg: #000; }
+  html, body { margin: 0; background: var(--bg); }
+  #sheet { display: block; width: 100%; height: auto; }
+  #gl { display: none; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "../node_modules/three/build/three.module.js",
+  "three/addons/": "../node_modules/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="sheet" width="2400" height="1350"></canvas>
+<script type="module">
+// Ren, the Hooded Courier, as a 3D character. Serve zoe/reels over http (ES modules) and open
+// concepts/ren-3d.html. Matte, fabric-like materials + painterly grain, per the visual rules:
+// near-black, cyan light from above (the Spires), toxic green from below (the Underlayer).
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const CYAN = 0x2EE6FF, GREEN = 0x39FF88;
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = rng(5);
+
+// ---------- textures painted on 2D canvases ----------
+function canvasTex(w, h, paint, srgb = true) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  paint(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
+}
+const fabric = canvasTex(1024, 1024, (g, w, h) => { // woven cloth with folds
+  g.fillStyle = '#0d1719'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 60; i++) { const x = R() * w, gr = g.createLinearGradient(x - 40, 0, x + 40, 0); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.5, `rgba(${R() < .5 ? '0,0,0' : '40,70,74'},${.25 + R() * .25})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x - 40, 0, 80, h); }
+  for (let i = 0; i < 9000; i++) { g.fillStyle = `rgba(${R() < .5 ? '255,255,255' : '0,0,0'},${R() * .05})`; g.fillRect(R() * w, R() * h, 2, 1 + R() * 3); }
+});
+const fabricBump = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#808080'; g.fillRect(0, 0, w, h); for (let y = 0; y < h; y += 4) { g.fillStyle = `rgba(255,255,255,${.08 + R() * .08})`; g.fillRect(0, y, w, 1); } for (let x = 0; x < w; x += 4) { g.fillStyle = `rgba(0,0,0,${.08 + R() * .08})`; g.fillRect(x, 0, 1, h); } }, false);
+// glowing circuit-trace embroidery along the hem (v=0 is the hem, which is the canvas bottom)
+function traces(g, w, h, y0, y1, color) {
+  g.strokeStyle = color; g.lineCap = 'round'; g.lineJoin = 'round';
+  for (let i = 0; i < 70; i++) {
+    let x = R() * w, y = y0 + R() * (y1 - y0); g.lineWidth = 2 + R() * 3;
+    g.beginPath(); g.moveTo(x, y);
+    for (let k = 0; k < 3; k++) { if (k % 2) { const d = 10 + R() * 24; x += d; y += (R() < .5 ? -1 : 1) * d; } else x += (R() < .5 ? -1 : 1) * (20 + R() * 60); y = Math.max(y0, Math.min(y1, y)); g.lineTo(x, y); }
+    g.stroke(); g.fillStyle = color; g.beginPath(); g.arc(x, y, 3.5, 0, 7); g.fill();
+  }
+}
+const cloakGlow = canvasTex(1024, 1024, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); traces(g, w, h, h - 120, h - 20, '#2EE6FF'); g.fillStyle = '#2EE6FF'; g.fillRect(0, h - 14, w, 4); });
+const hoodGlow = canvasTex(1024, 1024, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.fillStyle = '#2EE6FF'; g.fillRect(0, 0, 10, h); g.fillRect(w - 10, 0, 10, h); g.save(); traces(g, 90, h, 40, h - 40, '#2EE6FF'); g.translate(w - 90, 0); traces(g, 90, h, 40, h - 40, '#2EE6FF'); g.restore(); });
+const metal = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#1b2d31'; g.fillRect(0, 0, w, h); for (let i = 0; i < 4000; i++) { g.fillStyle = `rgba(${R() < .5 ? '255,255,255' : '0,0,0'},${R() * .04})`; g.fillRect(R() * w, R() * h, 3, 3); } g.strokeStyle = 'rgba(0,0,0,.65)'; g.lineWidth = 3; for (const y of [150, 360]) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); } for (const x of [128, 384]) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 150); g.stroke(); } });
+const soft = canvasTex(128, 128, (g) => { const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64); rg.addColorStop(0, 'rgba(255,255,255,1)'); rg.addColorStop(.4, 'rgba(255,255,255,.35)'); rg.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = rg; g.fillRect(0, 0, 128, 128); });
+const sky = canvasTex(1024, 1024, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#04161b'); gr.addColorStop(.45, '#020606'); gr.addColorStop(1, '#072414'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 1600; i++) { const x = R() * w, y = R() * h, l = 20 + R() * 80; g.strokeStyle = R() < .5 ? `rgba(150,230,230,${R() * .04})` : `rgba(0,0,0,${R() * .12})`; g.lineWidth = 2 + R() * 6; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (R() - .5) * 20, y + l); g.stroke(); }
+});
+
+// ---------- materials ----------
+const cloth = new THREE.MeshStandardMaterial({ map: fabric, bumpMap: fabricBump, bumpScale: 0.6, roughness: 0.95, metalness: 0, side: THREE.DoubleSide });
+const clothTrim = cloth.clone(); clothTrim.emissive = new THREE.Color(CYAN); clothTrim.emissiveMap = cloakGlow; clothTrim.emissiveIntensity = 1.0;
+const hoodMat = cloth.clone(); hoodMat.emissive = new THREE.Color(CYAN); hoodMat.emissiveMap = hoodGlow; hoodMat.emissiveIntensity = 0.9;
+const gun = new THREE.MeshStandardMaterial({ map: metal, roughness: 0.55, metalness: 0.65 });
+const dark = new THREE.MeshStandardMaterial({ color: 0x0b1517, roughness: 0.8, metalness: 0.2 });
+const visorMat = new THREE.MeshStandardMaterial({ color: 0x020506, roughness: 0.18, metalness: 0.4 });
+const glowC = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: CYAN, emissiveIntensity: 2.4 });
+const glowG = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: GREEN, emissiveIntensity: 2.2 });
+const glowGsoft = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: GREEN, emissiveIntensity: 1.2 });
+const white = new THREE.MeshBasicMaterial({ color: 0xf2ffff });
+const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: CYAN, emissiveIntensity: 1.1 });
+
+// ---------- Ren ----------
+const ren = new THREE.Group();
+function lathe(profile, phiStart, phiLen, mat, bend) {
+  const geo = new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), 96, phiStart, phiLen);
+  if (bend) { const p = geo.attributes.position; for (let i = 0; i < p.count; i++) { const v = bend(p.getX(i), p.getY(i), p.getZ(i)); p.setXYZ(i, v[0], v[1], v[2]); } geo.computeVertexNormals(); }
+  return new THREE.Mesh(geo, mat);
+}
+// cloak: open at the front, tattered hem
+const cloakProfile = []; for (let k = 0; k <= 24; k++) { const u = k / 24; cloakProfile.push([0.74 - 0.4 * Math.pow(u, 0.8), 0.1 + u * 1.08]); }
+ren.add(lathe(cloakProfile, 0.42, Math.PI * 2 - 0.84, clothTrim, (x, y, z) => {
+  const a = Math.atan2(x, z), hem = y < 0.16 ? (Math.abs(Math.sin(a * 9)) * 0.09 + Math.abs(Math.sin(a * 23)) * 0.03) : 0;
+  const fold = Math.sin(a * 11) * 0.025 * (1.2 - y); return [x * (1 + fold), y + hem, z * (1 + fold)];
+}));
+// mantle over the shoulders
+const mantle = []; for (let k = 0; k <= 12; k++) { const u = k / 12; mantle.push([0.6 - 0.28 * u, 0.88 + u * 0.4]); }
+ren.add(lathe(mantle, 0.6, Math.PI * 2 - 1.2, clothTrim, (x, y, z) => { const a = Math.atan2(x, z); return [x, y + (y < 0.92 ? Math.abs(Math.sin(a * 7)) * 0.05 : 0), z]; }));
+// torso glimpsed through the opening, with a green core
+const torso = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.62, 0.42, 4, 0.1), gun); torso.position.set(0, 0.85, 0.02); ren.add(torso);
+const core = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.03, 32), glowG); core.rotation.x = Math.PI / 2; core.position.set(0, 0.95, 0.235); ren.add(core);
+const coreRing = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.014, 12, 40), dark); coreRing.position.set(0, 0.95, 0.24); ren.add(coreRing);
+for (let k = 0; k < 3; k++) { const vent = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.012, 0.02), glowGsoft); vent.position.set(0, 0.74 - k * 0.04, 0.23); ren.add(vent); }
+// boots
+for (const x of [-0.15, 0.15]) { const b = new THREE.Mesh(new RoundedBoxGeometry(0.24, 0.13, 0.36, 4, 0.06), dark); b.position.set(x, 0.065, 0.1); ren.add(b); const sole = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.02, 0.37), glowGsoft); sole.position.set(x, 0.008, 0.1); ren.add(sole); }
+// head
+const head = new THREE.Group(); head.position.set(0, 1.55, 0.04); ren.add(head);
+head.add(new THREE.Mesh(new RoundedBoxGeometry(0.64, 0.52, 0.54, 6, 0.2), gun));
+const band = new THREE.Mesh(new RoundedBoxGeometry(0.66, 0.06, 0.56, 4, 0.03), dark); band.position.y = -0.12; head.add(band);
+const visor = new THREE.Mesh(new RoundedBoxGeometry(0.52, 0.32, 0.06, 6, 0.03), visorMat); visor.position.set(0, 0.01, 0.26); head.add(visor);
+for (const ex of [-0.115, 0.115]) {
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), eyeMat); eye.scale.set(0.068, 0.092, 0.02); eye.position.set(ex, 0.02, 0.295); head.add(eye);
+  const hi = new THREE.Mesh(new THREE.SphereGeometry(0.018, 12, 8), white); hi.position.set(ex + 0.025, 0.055, 0.31); head.add(hi);
+  const blush = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 8), glowGsoft); blush.scale.set(0.035, 0.016, 0.01); blush.position.set(ex * 1.75, -0.1, 0.29); head.add(blush);
+}
+for (const sx of [-1, 1]) { const ear = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 24), dark); ear.rotation.z = Math.PI / 2; ear.position.set(sx * 0.335, 0, 0); head.add(ear); const ring = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 8, 24), glowC); ring.rotation.y = Math.PI / 2; ring.position.set(sx * 0.362, 0, 0); head.add(ring); }
+// pointed gothic hood, open at the face, tip leaning back
+const hoodP = []; for (let k = 0; k <= 30; k++) { const u = k / 30; const r = u < 0.45 ? 0.46 + Math.sin(u / 0.45 * Math.PI / 2) * 0.04 : 0.5 * Math.pow(1 - (u - 0.45) / 0.55, 1.4); hoodP.push([Math.max(0.002, r), 1.2 + u * 1.0]); }
+ren.add(lathe(hoodP, 0.95, Math.PI * 2 - 1.9, hoodMat, (x, y, z) => [x, y, z - Math.max(0, y - 1.75) * 0.55 + 0.02]));
+// antenna threading out through the hood, tipped with a green bulb
+const antCurve = new THREE.CatmullRomCurve3([new THREE.Vector3(0.12, 1.8, 0.0), new THREE.Vector3(0.2, 2.05, -0.12), new THREE.Vector3(0.16, 2.35, -0.3), new THREE.Vector3(0.24, 2.55, -0.38)]);
+ren.add(new THREE.Mesh(new THREE.TubeGeometry(antCurve, 40, 0.012, 8), dark));
+const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 20, 14), glowG); bulb.position.copy(antCurve.getPoint(1)); ren.add(bulb);
+// raised arm in a sleeve, jointed fingers, a light in the hand
+const armCurve = new THREE.CatmullRomCurve3([new THREE.Vector3(-0.36, 1.12, 0.05), new THREE.Vector3(-0.62, 1.38, 0.14), new THREE.Vector3(-0.66, 1.72, 0.2)]);
+ren.add(new THREE.Mesh(new THREE.TubeGeometry(armCurve, 30, 0.1, 16), cloth));
+const hand = new THREE.Group(); hand.position.set(-0.66, 1.8, 0.2); ren.add(hand);
+hand.add(new THREE.Mesh(new THREE.SphereGeometry(0.075, 20, 14), gun));
+for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.018, 0.07, 4, 8), gun); f.position.set(-0.05 + k * 0.033, 0.07, 0.02); f.rotation.z = (k - 1.5) * 0.18; hand.add(f); }
+const orb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 24, 16), glowC); orb.position.set(-0.66, 1.98, 0.22); ren.add(orb);
+// satchel on a strap, green buckle
+const strap = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(-0.32, 1.12, 0.3), new THREE.Vector3(0.05, 0.85, 0.42), new THREE.Vector3(0.4, 0.6, 0.38)]), 30, 0.03, 8), dark); ren.add(strap);
+const bag = new THREE.Mesh(new RoundedBoxGeometry(0.32, 0.26, 0.12, 4, 0.04), dark); bag.position.set(0.44, 0.5, 0.36); bag.rotation.set(0, -0.4, 0.12); ren.add(bag);
+const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.02), glowG); buckle.position.set(0.46, 0.53, 0.43); buckle.rotation.copy(bag.rotation); ren.add(buckle);
+
+const scene = new THREE.Scene();
+scene.background = sky;
+scene.fog = new THREE.FogExp2(0x020605, 0.025);
+scene.add(ren);
+// smoke of light rising from the hand
+const smoke = new THREE.Group(); scene.add(smoke);
+for (let i = 0; i < 70; i++) {
+  const u = i / 70, m = new THREE.SpriteMaterial({ map: soft, color: CYAN, transparent: true, opacity: 0.16 * (1 - u * 0.7), blending: THREE.AdditiveBlending, depthWrite: false });
+  const s = new THREE.Sprite(m); const a = u * 9;
+  s.position.set(-0.66 + Math.sin(a) * 0.18 * u + u * 0.35, 2.0 + u * 1.9, 0.22 + Math.cos(a) * 0.12 * u); s.scale.setScalar(0.1 + u * 0.5); smoke.add(s);
+}
+// ledge + green fog below
+const ledge = new THREE.Mesh(new RoundedBoxGeometry(2.6, 0.5, 1.6, 4, 0.06), new THREE.MeshStandardMaterial({ color: 0x050909, roughness: 1 })); ledge.position.set(0, -0.25, 0); scene.add(ledge);
+for (let i = 0; i < 16; i++) { const m = new THREE.SpriteMaterial({ map: soft, color: GREEN, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false }); const s = new THREE.Sprite(m); s.position.set((R() - .5) * 6, -0.9 - R() * 0.6, (R() - .5) * 4 - 1); s.scale.set(2.5 + R() * 2, 1 + R(), 1); scene.add(s); }
+
+// lights: cyan from above (Spires), toxic green from below (Underlayer)
+scene.add(new THREE.HemisphereLight(0x2EE6FF, 0x39FF88, 0.12));
+const rim = new THREE.DirectionalLight(CYAN, 2.6); rim.position.set(-2, 5, -3); scene.add(rim);
+const rim2 = new THREE.DirectionalLight(CYAN, 1.1); rim2.position.set(3, 4, -2); scene.add(rim2);
+const under = new THREE.DirectionalLight(GREEN, 1.0); under.position.set(1, -3, 3); scene.add(under);
+const fill = new THREE.DirectionalLight(0x9fd8d8, 0.35); fill.position.set(2, 1.5, 4); scene.add(fill);
+const handLight = new THREE.PointLight(CYAN, 3, 2.5, 1.8); handLight.position.copy(orb.position); scene.add(handLight);
+const coreLight = new THREE.PointLight(GREEN, 1.2, 1.2, 2); coreLight.position.set(0, 0.95, 0.5); scene.add(coreLight);
+const bulbLight = new THREE.PointLight(GREEN, 1.0, 1.5, 2); bulbLight.position.copy(bulb.position); scene.add(bulbLight);
+
+// ---------- render views into the sheet ----------
+const glCanvas = document.createElement('canvas'); glCanvas.id = 'gl';
+const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, preserveDrawingBuffer: true });
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95; renderer.outputColorSpace = THREE.SRGBColorSpace;
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+// glow is added in 2D below (software GL renders bloom mips blocky)
+composer.addPass(new OutputPass());
+
+function view(w, h, pos, target, fov = 30) {
+  renderer.setSize(w, h, false); composer.setSize(w, h);
+  camera.aspect = w / h; camera.fov = fov; camera.updateProjectionMatrix();
+  camera.position.set(...pos); camera.lookAt(new THREE.Vector3(...target));
+  composer.render();
+  return glCanvas;
+}
+
+const sheet = document.getElementById('sheet'), g = sheet.getContext('2d');
+const SW = sheet.width, SH = sheet.height, FONT = "'Inter Display', Inter, Arial, sans-serif";
+function text(s, x, y, size, weight, color, o = {}) { g.save(); g.font = `${weight} ${size}px ${FONT}`; g.letterSpacing = (o.ls || 0) + 'px'; g.textAlign = o.align || 'left'; g.fillStyle = color; if (o.glow) { g.shadowColor = o.glow; g.shadowBlur = o.blur || 18; } g.fillText(s, x, y); g.restore(); }
+
+g.fillStyle = '#000'; g.fillRect(0, 0, SW, SH);
+function glowDraw(src, x, y) { // image + soft glow on its brightest parts only
+  g.drawImage(src, x, y);
+  g.save(); g.globalCompositeOperation = 'lighter';
+  g.filter = 'brightness(0.7) contrast(3) blur(18px)'; g.globalAlpha = 0.55; g.drawImage(src, x, y);
+  g.filter = 'brightness(0.6) contrast(4) blur(5px)'; g.globalAlpha = 0.45; g.drawImage(src, x, y);
+  g.restore();
+}
+glowDraw(view(1400, 1350, [3.1, 1.9, 6.4], [-0.15, 1.35, 0], 30), 0, 0);               // hero, 3/4
+const small = [['FRONT', [0, 1.4, 6.6]], ['SIDE', [6.6, 1.4, 0.2]], ['BACK', [-0.4, 1.4, -6.6]]];
+small.forEach(([label, pos], i) => {
+  const x = 1440 + i * 310, y = 640;
+  glowDraw(view(300, 520, pos, [-0.15, 1.3, 0], 30), x, y);
+  g.strokeStyle = 'rgba(46,230,255,.35)'; g.lineWidth = 1.5; g.strokeRect(x + .5, y + .5, 299, 519);
+  text(label, x + 150, y + 556, 22, 800, '#9FB8B4', { align: 'center', ls: 6 });
+});
+// painterly grain over everything
+const pr = rng(77);
+for (let i = 0; i < 7000; i++) { const x = pr() * SW, y = pr() * SH, l = 6 + pr() * 34, a = pr() * Math.PI; g.strokeStyle = pr() < .5 ? `rgba(255,255,255,${pr() * .05})` : `rgba(0,0,0,${pr() * .1})`; g.lineWidth = 1 + pr() * 3; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+const vg = g.createRadialGradient(700, 675, 300, 700, 675, 1100); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.6)'); g.fillStyle = vg; g.fillRect(0, 0, 1400, SH);
+
+text('SUBSTER', 1440, 150, 110, 800, '#E9F7F5', { ls: 30, glow: 'rgba(46,230,255,.8)', blur: 30 });
+text('THE HOODED COURIER · 3D CHARACTER', 1444, 205, 28, 800, '#39FF88', { ls: 6 });
+const notes = [
+  ['Hood + mantle', 'Layered cloth with glowing circuit-trace embroidery'],
+  ['Face', 'Matte gunmetal head, glossy visor, big cyan eyes'],
+  ['Sees the current', 'Light in the hand rises like smoke'],
+  ['Underlayer roots', 'Green chest core, antenna bulb, satchel buckle'],
+];
+notes.forEach(([h, d], i) => { const y = 290 + i * 78; text(h.toUpperCase(), 1444, y, 24, 800, '#2EE6FF', { ls: 4 }); text(d, 1444, y + 34, 26, 500, '#9FB8B4'); });
+window.done = true;
+</script>
+</body>
+</html>

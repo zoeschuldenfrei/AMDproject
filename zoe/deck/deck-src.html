@@ -140,6 +140,16 @@
   .kv b { font-size: 24px; letter-spacing: 5px; text-transform: uppercase; color: var(--cyan); font-weight: 800; }
   .kv span { font-size: 28px; color: var(--ink); }
 
+  /* meet subster */
+  .hero-char { display: grid; grid-template-columns: 820px 1fr; gap: 80px; align-items: center; }
+  .hero-char img { width: 820px; height: 780px; object-fit: cover; border: 1px solid rgba(46,230,255,.35); border-radius: 2px; box-shadow: 0 0 90px rgba(46,230,255,.18), 0 0 160px rgba(57,255,136,.08); }
+  .hero-char > div { background: radial-gradient(120% 90% at 40% 50%, rgba(0,0,0,.92) 55%, rgba(0,0,0,0) 100%); padding: 40px 40px 40px 0; }
+  .traits { margin-top: 40px; display: grid; gap: 26px; }
+  .traits div { border-left: 3px solid var(--cyan); padding-left: 26px; }
+  .traits div.g2 { border-left-color: var(--green); }
+  .traits b { display: block; font-size: 24px; letter-spacing: 5px; text-transform: uppercase; color: var(--cyan); font-weight: 800; margin-bottom: 6px; }
+  .traits div.g2 b { color: var(--green); }
+  .traits span { font-size: 30px; color: var(--ink); line-height: 1.35; }
   /* what's next: roadmap */
   .road { display: grid; grid-template-columns: 1fr 64px 1fr 64px 1fr; align-items: stretch; margin-top: 56px; }
   .phase { border: 1px solid rgba(46,230,255,.32); border-radius: 2px; padding: 36px 38px; background: rgba(2,8,8,.9); display: flex; flex-direction: column; gap: 14px; }
@@ -237,6 +247,23 @@
       <div class="step"><div class="k">THE RIVERS OF LIGHT</div><h3>are data</h3><p>Photons pouring between the spires.</p></div>
       <div class="arrow">→</div>
       <div class="step"><div class="k">THE PULLBACK</div><h3>reveals the chip</h3><p>…and the AMD logo. The brand reveal is the payoff.</p></div>
+    </div>
+  </section>
+
+  <!-- MEET SUBSTER -->
+  <section class="slide">
+    <div class="hero-char">
+      <img src="SUBSTER_SRC" alt="Subster: a small hooded robot with big cyan eyes, a green chest core and light rising from its raised hand">
+      <div>
+        <div class="eyebrow">Meet The Hero</div>
+        <h2 style="font-size:130px;letter-spacing:6px" class="glow-c">SUBSTER</h2>
+        <div class="tag" style="margin-top:10px;font-size:34px">The Hooded Courier</div>
+        <div class="traits">
+          <div><b>Sees the current</b><span>A courier from the Underlayer who can see the light and data no one else notices.</span></div>
+          <div class="g2"><b>Small against the city</b><span>Always tiny, always looking up. The audience’s way into the world.</span></div>
+          <div><b>Carries the Seed</b><span>The new core that decides which half of the city grows, delivered to the Gate.</span></div>
+        </div>
+      </div>
     </div>
   </section>
 
