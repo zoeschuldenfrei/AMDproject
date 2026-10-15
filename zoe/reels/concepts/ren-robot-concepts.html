@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ren Robot Concepts</title>
+<style>
+  :root { --bg: #000; }
+  html, body { margin: 0; background: var(--bg); }
+  canvas { display: block; width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<canvas id="c" width="2400" height="1350"></canvas>
+<script>
+// Ren as a cute robot: three directions on one sheet. Palette per CLAUDE.md:
+// near-black, electric cyan from above, toxic green from below. Painterly, silhouette-first.
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const CY = [46, 230, 255], GR = [57, 255, 136];
+const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const FONT = "'Inter Display', Inter, Arial, sans-serif";
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const r = rng(11);
+
+function text(s, x, y, size, weight, color, o = {}) {
+  g.save(); g.font = `${weight} ${size}px ${FONT}`; g.letterSpacing = (o.ls || 0) + 'px';
+  g.textAlign = o.align || 'center'; g.fillStyle = color;
+  if (o.glow) { g.shadowColor = o.glow; g.shadowBlur = o.blur || 20; }
+  g.fillText(s, x, y); g.restore();
+}
+function glowDot(x, y, rad, c, a = 1) {
+  const rg = g.createRadialGradient(x, y, 0, x, y, rad);
+  rg.addColorStop(0, `rgba(240,255,255,${a})`); rg.addColorStop(0.25, rgba(c, 0.8 * a)); rg.addColorStop(1, rgba(c, 0));
+  g.fillStyle = rg; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+}
+function rimStroke(c, a, w) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = rgba(c, a); g.lineWidth = w; g.stroke(); g.restore(); }
+function brush(x0, y0, w, h, n, light) {
+  for (let i = 0; i < n; i++) {
+    const x = x0 + r() * w, y = y0 + r() * h, len = 20 + r() * 90, a = (r() - .5) * .6 + Math.PI / 2;
+    g.strokeStyle = light ? `rgba(160,235,235,${.02 + r() * .05})` : `rgba(0,0,0,${.08 + r() * .12})`;
+    g.lineWidth = 2 + r() * 7; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
+  }
+}
+function smoke(x, y, h, c, sway) { // liquid light rising like smoke
+  g.save(); g.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 46; i++) {
+    const u = i / 46, px = x + Math.sin(u * 7 + sway) * 40 * u + sway * u * 30, py = y - u * h, rad = 10 + u * 60;
+    const rg = g.createRadialGradient(px, py, 0, px, py, rad);
+    rg.addColorStop(0, rgba(c, 0.22 * (1 - u * 0.7))); rg.addColorStop(1, rgba(c, 0));
+    g.fillStyle = rg; g.fillRect(px - rad, py - rad, rad * 2, rad * 2);
+  }
+  g.restore();
+}
+
+// ---------- A · Hooded Courier ----------
+function robotA(cx, by, s) {
+  g.save(); g.translate(cx, by); g.scale(s, s);
+  // cloak with tattered hem
+  g.beginPath(); g.moveTo(-70, -250);
+  g.quadraticCurveTo(-150, -120, -175, 0);
+  for (let k = 0; k < 7; k++) g.lineTo(-175 + k * 50 + 25, -18 - (k % 2) * 22), g.lineTo(-175 + (k + 1) * 50, 0);
+  g.quadraticCurveTo(150, -120, 70, -250); g.closePath();
+  g.fillStyle = '#081011'; g.fill(); rimStroke(CY, .55, 3);
+  // satchel strap + bag
+  g.strokeStyle = '#132326'; g.lineWidth = 14; g.beginPath(); g.moveTo(-60, -240); g.lineTo(80, -90); g.stroke();
+  g.fillStyle = '#0D1A1C'; g.beginPath(); g.roundRect(55, -120, 80, 64, 12); g.fill();
+  g.fillStyle = rgba(GR, .8); g.fillRect(85, -96, 20, 6);
+  // raised arm with smoke of light (Ren sees the current)
+  g.strokeStyle = '#0A1416'; g.lineWidth = 30; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-90, -200); g.quadraticCurveTo(-170, -260, -165, -340); g.stroke();
+  g.fillStyle = '#16282B'; g.beginPath(); g.arc(-165, -350, 22, 0, 7); g.fill();
+  glowDot(-165, -362, 50, CY, .9);
+  smoke(-165, -370, 330, CY, 1.2);
+  // feet
+  g.fillStyle = '#0B1517'; for (const x of [-55, 30]) { g.beginPath(); g.roundRect(x, -14, 50, 22, 11); g.fill(); }
+  // pointed gothic hood
+  g.beginPath(); g.moveTo(0, -560);
+  g.bezierCurveTo(70, -520, 150, -450, 145, -330); g.quadraticCurveTo(140, -240, 0, -230);
+  g.quadraticCurveTo(-140, -240, -145, -330); g.bezierCurveTo(-150, -450, -70, -520, 0, -560); g.closePath();
+  g.fillStyle = '#0A1314'; g.fill(); rimStroke(CY, .8, 3);
+  // round robot head + visor
+  g.fillStyle = '#1A2E31'; g.beginPath(); g.roundRect(-108, -430, 216, 180, 70); g.fill();
+  g.fillStyle = '#020506'; g.beginPath(); g.roundRect(-88, -400, 176, 112, 50); g.fill();
+  for (const ex of [-38, 38]) { // big glowing eyes
+    g.save(); g.shadowColor = rgba(CY, 1); g.shadowBlur = 30; g.fillStyle = rgba(CY, 1);
+    g.beginPath(); g.ellipse(ex, -345, 20, 28, 0, 0, 7); g.fill(); g.restore();
+    g.fillStyle = '#F2FFFF'; g.beginPath(); g.arc(ex + 7, -356, 7, 0, 7); g.fill();
+  }
+  g.fillStyle = rgba(GR, .35); for (const ex of [-66, 66]) { g.beginPath(); g.ellipse(ex, -305, 14, 7, 0, 0, 7); g.fill(); } // blush lights
+  // antenna through the hood
+  g.strokeStyle = '#1A2E31'; g.lineWidth = 6; g.beginPath(); g.moveTo(30, -430); g.quadraticCurveTo(60, -520, 40, -600); g.stroke();
+  glowDot(40, -604, 30, GR, 1);
+  g.restore();
+}
+
+// ---------- B · Lantern Bot ----------
+function seed(x, y, rad) { // the Seed: stained-glass sphere
+  g.save(); g.beginPath(); g.arc(x, y, rad, 0, 7); g.clip();
+  g.fillStyle = '#04100E'; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+  const rr = rng(4), cols = [[46, 230, 255], [57, 255, 136], [180, 250, 255], [20, 140, 170], [120, 255, 200]];
+  for (let i = 0; i < 26; i++) {
+    const a = rr() * 7, d = rr() * rad, px = x + Math.cos(a) * d, py = y + Math.sin(a) * d, cr = 10 + rr() * rad * 0.35;
+    g.fillStyle = rgba(cols[i % 5], .75); g.beginPath(); g.ellipse(px, py, cr, cr * (0.6 + rr() * 0.4), rr() * 3, 0, 7); g.fill();
+  }
+  g.strokeStyle = '#020605'; g.lineWidth = 5;
+  for (let i = 0; i < 16; i++) { const a = rr() * 7; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a + .4) * rad * .6, y + Math.sin(a + .4) * rad * .6, x + Math.cos(a) * rad, y + Math.sin(a) * rad); g.stroke(); }
+  g.restore();
+  g.beginPath(); g.arc(x, y, rad, 0, 7); g.strokeStyle = '#020605'; g.lineWidth = 6; g.stroke();
+  glowDot(x, y, rad * 2.2, CY, .45);
+}
+function robotB(cx, by, s) {
+  g.save(); g.translate(cx, by); g.scale(s, s);
+  // scarf streaming in the updraft
+  g.beginPath(); g.moveTo(-40, -300); g.bezierCurveTo(-140, -330, -220, -260, -300, -300); g.lineTo(-290, -270);
+  g.bezierCurveTo(-210, -230, -130, -290, -40, -265); g.closePath();
+  g.fillStyle = '#0B3A44'; g.fill(); rimStroke(CY, .7, 2.5);
+  // legs + feet
+  g.strokeStyle = '#132326'; g.lineWidth = 18; for (const x of [-38, 38]) { g.beginPath(); g.moveTo(x, -150); g.lineTo(x, -30); g.stroke(); }
+  g.fillStyle = '#0D1A1C'; for (const x of [-38, 38]) { g.beginPath(); g.ellipse(x, -18, 36, 18, 0, 0, 7); g.fill(); }
+  // capsule body
+  g.beginPath(); g.roundRect(-85, -310, 170, 180, 70); g.fillStyle = '#0E1C1F'; g.fill(); rimStroke(CY, .5, 3);
+  g.fillStyle = rgba(GR, .9); for (let k = 0; k < 3; k++) g.fillRect(-30 + k * 22, -200, 12, 12);
+  // arms holding the Seed
+  g.strokeStyle = '#132326'; g.lineWidth = 20; g.lineCap = 'round';
+  for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(sx * 80, -270); g.quadraticCurveTo(sx * 120, -220, sx * 50, -205); g.stroke(); }
+  seed(0, -215, 52);
+  // glass dome head with a toxic-green core
+  g.beginPath(); g.arc(0, -450, 140, 0, 7);
+  g.fillStyle = 'rgba(14,50,56,0.55)'; g.fill();
+  smoke(0, -400, 120, GR, 0.4);
+  g.save(); g.globalCompositeOperation = 'lighter';
+  g.fillStyle = rgba(GR, .9); g.beginPath(); g.moveTo(0, -495); g.quadraticCurveTo(34, -440, 0, -405); g.quadraticCurveTo(-34, -440, 0, -495); g.fill();
+  g.restore(); glowDot(0, -440, 90, GR, .7);
+  // face plate with two dot eyes on the glass
+  g.fillStyle = '#020506'; g.beginPath(); g.roundRect(-82, -400, 164, 64, 32); g.fill();
+  for (const ex of [-34, 34]) { g.save(); g.shadowColor = rgba(CY, 1); g.shadowBlur = 24; g.fillStyle = rgba(CY, 1); g.beginPath(); g.arc(ex, -368, 16, 0, 7); g.fill(); g.restore(); g.fillStyle = '#F2FFFF'; g.beginPath(); g.arc(ex + 5, -374, 5, 0, 7); g.fill(); }
+  g.beginPath(); g.arc(0, -450, 140, 0, 7); rimStroke(CY, .9, 4);
+  g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(230,255,255,.5)'; g.lineWidth = 10; g.lineCap = 'round';
+  g.beginPath(); g.arc(0, -450, 112, Math.PI * 1.15, Math.PI * 1.45); g.stroke(); g.restore(); // glass highlight
+  g.fillStyle = '#1A2E31'; g.fillRect(-60, -322, 120, 18); // collar
+  g.restore();
+}
+
+// ---------- C · Scrap Runner ----------
+function robotC(cx, by, s) {
+  g.save(); g.translate(cx, by); g.scale(s, s);
+  // light trail behind (running)
+  g.save(); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+  for (let k = 0; k < 5; k++) { g.strokeStyle = rgba(k % 2 ? GR : CY, .35 - k * .05); g.lineWidth = 10 - k; g.beginPath(); g.moveTo(-80, -140 - k * 26); g.bezierCurveTo(-200, -150 - k * 26, -300, -110 - k * 20, -420, -130 - k * 30); g.stroke(); }
+  g.restore();
+  // springy legs mid-stride
+  g.strokeStyle = '#1A2B2D'; g.lineWidth = 8;
+  const leg = (x0, x1) => { g.beginPath(); g.moveTo(x0, -150); for (let k = 1; k <= 8; k++) g.lineTo(lerpN(x0, x1, k / 8) + (k % 2 ? 14 : -14), -150 + k * 16); g.stroke(); };
+  leg(-30, -90); leg(30, 70);
+  g.fillStyle = '#0D1A1C'; g.beginPath(); g.ellipse(-90, -18, 38, 16, -0.2, 0, 7); g.fill(); g.beginPath(); g.ellipse(70, -18, 38, 16, 0.2, 0, 7); g.fill();
+  // backpack with parcel
+  g.fillStyle = '#0C1618'; g.beginPath(); g.roundRect(-150, -330, 80, 130, 14); g.fill(); rimStroke(GR, .4, 2);
+  g.strokeStyle = rgba(GR, .7); g.lineWidth = 3; g.strokeRect(-138, -300, 56, 40);
+  // patched box body
+  g.save(); g.rotate(0.08);
+  g.beginPath(); g.roundRect(-90, -330, 180, 180, 22); g.fillStyle = '#111F21'; g.fill(); rimStroke(CY, .45, 3);
+  g.fillStyle = '#18292B'; g.fillRect(-60, -300, 70, 50); g.fillRect(20, -230, 50, 50);
+  g.fillStyle = '#2B4245'; for (const [x, y] of [[-55, -295], [5, -295], [-55, -255], [5, -255], [25, -225], [65, -225]]) { g.beginPath(); g.arc(x, y, 4, 0, 7); g.fill(); }
+  g.restore();
+  // arms pumping
+  g.strokeStyle = '#1A2B2D'; g.lineWidth = 18; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-80, -280); g.lineTo(-130, -210); g.stroke(); g.beginPath(); g.moveTo(85, -280); g.lineTo(140, -330); g.stroke();
+  // old-monitor head with pixel eyes
+  g.save(); g.translate(0, -440); g.rotate(-0.1);
+  g.beginPath(); g.roundRect(-140, -105, 280, 210, 34); g.fillStyle = '#152426'; g.fill(); rimStroke(CY, .8, 3);
+  g.beginPath(); g.roundRect(-110, -78, 220, 150, 26); g.fillStyle = '#020806'; g.fill();
+  g.save(); g.beginPath(); g.roundRect(-110, -78, 220, 150, 26); g.clip();
+  g.fillStyle = 'rgba(57,255,136,0.06)'; for (let y = -78; y < 72; y += 6) g.fillRect(-110, y, 220, 2); // scanlines
+  g.restore();
+  g.fillStyle = rgba(GR, 1); g.shadowColor = rgba(GR, 1); g.shadowBlur = 20;
+  const px = (x, y) => g.fillRect(x, y, 14, 14); // happy ^ ^ pixel eyes
+  for (const ox of [-62, 34]) { px(ox, -6); px(ox + 14, -20); px(ox + 28, -6); }
+  px(-14, 34); px(0, 40); px(14, 34); // little smile
+  g.shadowBlur = 0;
+  // cable antennas
+  g.strokeStyle = '#1F3335'; g.lineWidth = 6;
+  g.beginPath(); g.moveTo(-70, -105); g.quadraticCurveTo(-120, -180, -80, -210); g.stroke();
+  g.beginPath(); g.moveTo(60, -105); g.quadraticCurveTo(90, -170, 140, -180); g.stroke();
+  g.restore();
+  glowDot(-80, -652, 26, CY, 1); glowDot(140, -622, 22, GR, 1);
+  g.restore();
+}
+const lerpN = (a, b, t) => a + (b - a) * t;
+
+// ---------- sheet ----------
+let bg = g.createLinearGradient(0, 0, 0, H);
+bg.addColorStop(0, '#02080A'); bg.addColorStop(0.5, '#020404'); bg.addColorStop(1, '#06160E');
+g.fillStyle = bg; g.fillRect(0, 0, W, H);
+brush(0, 0, W, H, 2500, true); brush(0, 0, W, H, 2500, false);
+const cols = [400, 1200, 2000];
+for (const x of cols) {
+  let rg = g.createRadialGradient(x, 120, 20, x, 120, 700); rg.addColorStop(0, rgba(CY, .22)); rg.addColorStop(1, rgba(CY, 0));
+  g.fillStyle = rg; g.fillRect(x - 700, 0, 1400, 900);
+  rg = g.createRadialGradient(x, 980, 20, x, 980, 520); rg.addColorStop(0, rgba(GR, .22)); rg.addColorStop(1, rgba(GR, 0));
+  g.fillStyle = rg; g.fillRect(x - 600, 500, 1200, 700);
+}
+// green fog band
+g.save(); g.filter = 'blur(40px)';
+for (let i = 0; i < 40; i++) { g.fillStyle = rgba(GR, .06); g.beginPath(); g.ellipse(r() * W, 960 + r() * 80, 200 + r() * 200, 50, 0, 0, 7); g.fill(); }
+g.restore();
+
+text('REN · CHARACTER EXPLORATION', 120, 110, 54, 800, '#E9F7F5', { align: 'left', ls: 8, glow: rgba(CY, .7), blur: 24 });
+text('THREE CUTE-ROBOT DIRECTIONS · PICK ONE (OR MIX)', 120, 160, 26, 700, rgba(GR, 1), { align: 'left', ls: 6 });
+
+robotA(cols[0], 930, 1.0);
+robotB(cols[1], 930, 1.0);
+robotC(cols[2], 930, 1.0);
+
+const labels = [
+  ['A · HOODED COURIER', 'Pointed gothic hood, big visor eyes.', 'Light pours from Ren’s hand like smoke.'],
+  ['B · LANTERN BOT', 'Glass dome with an Underlayer-green core.', 'Built to carry the Seed.'],
+  ['C · SCRAP RUNNER', 'Old-monitor head, pixel eyes, spring legs.', 'Made from legacy Underlayer parts.'],
+];
+labels.forEach(([h, a, b], i) => {
+  text(h, cols[i], 1030, 40, 800, '#E9F7F5', { ls: 6, glow: rgba(CY, .6), blur: 18 });
+  text(a, cols[i], 1078, 26, 500, '#9FB8B4');
+  text(b, cols[i], 1112, 26, 500, '#9FB8B4');
+});
+// "tiny on a ledge" readability test
+g.fillStyle = '#030606'; g.fillRect(0, 1165, W, 185);
+g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = rgba(CY, .35); g.fillRect(0, 1165, W, 2); g.restore();
+text('AT SCALE: HOW EACH READS AS A TINY SILHOUETTE ON A LEDGE', W - 120, 1215, 22, 700, '#6F8C88', { align: 'right', ls: 5 });
+[robotA, robotB, robotC].forEach((fn, i) => {
+  const x = cols[i] - 120, y = 1310;
+  g.fillStyle = '#081011'; g.beginPath(); g.moveTo(x - 160, y); g.lineTo(x + 60, y); g.lineTo(x + 80, y + 20); g.lineTo(x - 160, y + 40); g.fill();
+  g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = rgba(CY, .5); g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 160, y); g.lineTo(x + 60, y); g.stroke(); g.restore();
+  fn(x, y, 0.15);
+});
+window.done = true;
+</script>
+</body>
+</html>
