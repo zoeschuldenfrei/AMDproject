@@ -321,7 +321,11 @@
   function show(n) {
     i = Math.max(0, Math.min(slides.length - 1, n));
     slides.forEach((el, k) => { el.classList.toggle('active', k === i); el.classList.toggle('past', k < i); });
-    slides.forEach((el, k) => el.querySelectorAll('video').forEach(v => { if (k === i) { v.currentTime = 0; v.play().catch(() => {}); } else v.pause(); }));
+    slides.forEach((el, k) => el.querySelectorAll('video').forEach(v => {
+      if (k !== i) { v.pause(); return; }
+      v.currentTime = 0; v.muted = false; // sound is allowed once the presenter has pressed a key
+      v.play().catch(() => { v.muted = true; v.play().catch(() => {}); });
+    }));
     bar.style.width = ((i + 1) / slides.length * 100) + '%';
     count.textContent = `${String(i + 1).padStart(2, '0')} / ${slides.length}`;
     try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) {}

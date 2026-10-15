@@ -22,7 +22,7 @@ src = src.replace('KEYART_SRC', keyart)
 
 reel = os.path.join(here, '..', 'out', 'substrate-reel-15s.mp4')
 if os.path.exists(reel):
-    media = f'<video src="{data_uri(reel, "video/mp4")}" poster="{keyart}" muted loop playsinline autoplay></video>'
+    media = f'<video src="{data_uri(reel, "video/mp4")}" poster="{keyart}" loop playsinline preload="auto"></video>'
 else:
     media = f'<img src="{keyart}" alt="SUBSTRATE key art: a tiny figure on a ledge below glowing cyan rivers"><div class="cap">Reel 01 · in production</div>'
 src = src.replace('REEL_MEDIA', media)
