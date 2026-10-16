@@ -76,7 +76,7 @@ exploring a world instead of being told about it.
 - The conflict is between the two levels; the hero moves between them.
 
 ### Characters and objects
-- **Ren** – a courier from the Underlayer who can *see the current* (the flow of light and
+- **Subster** (the Hooded Courier robot; previously called Ren) – a courier from the Underlayer who can *see the current* (the flow of light and
   data no one else notices). Often shown as a small silhouette at a ledge, looking up.
 - **The Seed** – a glowing, stained-glass-like sphere that turns out to be a new core being
   born. Whoever decides where it's placed decides which half of the city grows.
@@ -94,11 +94,11 @@ exploring a world instead of being told about it.
 - Typography: bold, cinematic, movie-title-card feel
 
 ### The sizzle reels
-1. **"Every city runs on something."** Ren runs rooftops through the Underlayer; pullback
+1. **"Every city runs on something."** Subster runs rooftops through the Underlayer; pullback
    reveals the chip. Hero teaser.
-2. **"The Current."** Ren sees the light rivers for the first time. Pure spectacle, vertical.
+2. **"The Current."** Subster sees the light rivers for the first time. Pure spectacle, vertical.
 3. **"The Seed."** The orb is stolen; chase through the Spires.
-4. **"The Gate."** Ren stands before the ring vault. Cliffhanger + series title.
+4. **"The Gate."** Subster stands before the ring vault. Cliffhanger + series title.
 
 ### Audience, CTA, distribution, success
 - **Audience:** Gen Z gamers, animation fans, creators (narrow and specific on purpose)

@@ -143,7 +143,7 @@ s.addNotes('Meet Subster, the Hooded Courier: an Underlayer robot who can see th
 s = pres.addSlide({ masterName: 'SUB_CONTENT', sectionTitle: 'After' });
 bg(s, 'strands');
 fill(s, 'The Reels · 20–45s · TikTok, Reels, Shorts', [{ text: 'Story first. ' }, { text: 'The chip last.', options: { color: CYAN } }]);
-const reels = [['Every city runs on something.', 'Ren runs the Underlayer rooftops. Hero teaser.'], ['The Current.', 'Ren sees the light rivers for the first time. Pure spectacle.'], ['The Seed.', 'The orb is stolen: a chase through the Spires.'], ['The Gate.', 'Ren before the ring vault. Cliffhanger + series title.']];
+const reels = [['Every city runs on something.', 'Subster runs the Underlayer rooftops. Hero teaser.'], ['The Current.', 'Subster sees the light rivers for the first time. Pure spectacle.'], ['The Seed.', 'The orb is stolen: a chase through the Spires.'], ['The Gate.', 'Subster before the ring vault. Cliffhanger + series title.']];
 reels.forEach(([h, d], i) => {
   const y = 2.35 + i * 0.92;
   s.addShape(pres.shapes.LINE, { x: px(140), y, w: 7.4, h: 0, line: { color: INK, width: 0.75, transparency: 80 } });
